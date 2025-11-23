@@ -47,6 +47,10 @@ jobs:
         pip install -r requirements.txt
         pip install pytest pytest-cov pytest-asyncio httpx
     
+    - name: Generate test models
+      run: |
+        python setup_test_models.py
+    
     - name: Run linting
       run: |
         pip install flake8
