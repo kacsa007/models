@@ -9,6 +9,7 @@ from typing import List, Dict
 import psycopg2
 from psycopg2.extras import execute_batch
 import logging
+import os
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -230,17 +231,17 @@ class OKXWebSocketCollector:
 # Usage
 if __name__ == "__main__":
     DB_CONFIG = {
-        'host': 'localhost',
-        'database': 'okx_trading',
-        'user': 'postgres',
-        'password': 'your_password',
-        'port': 5432
+        'host': os.getenv('DB_HOST', 'localhost'),
+        'database': os.getenv('DB_NAME', 'okx_trading'),
+        'user': os.getenv('DB_USER', 'postgres'),
+        'password': os.getenv('DB_PASSWORD', 'your_password'),
+        'port': int(os.getenv('DB_PORT', '5432'))
     }
     
     collector = OKXWebSocketCollector(
-        api_key="YOUR_API_KEY",
-        secret_key="YOUR_SECRET_KEY",
-        passphrase="YOUR_PASSPHRASE",
+        api_key=os.getenv('OKX_API_KEY', 'YOUR_API_KEY'),
+        secret_key=os.getenv('OKX_SECRET_KEY', 'YOUR_SECRET_KEY'),
+        passphrase=os.getenv('OKX_PASSPHRASE', 'YOUR_PASSPHRASE'),
         db_config=DB_CONFIG
     )
     

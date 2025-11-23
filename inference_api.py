@@ -4,10 +4,18 @@ import joblib
 import pandas as pd
 from feature_engineering import FeatureEngineer
 from typing import Dict, List
+import os
 
 app = FastAPI(title="OKX Trading ML API")
 
-DB_URL = "postgresql://postgres:password@localhost:5432/okx_trading"
+# Build database URL from environment variables
+db_host = os.getenv('DB_HOST', 'localhost')
+db_name = os.getenv('DB_NAME', 'okx_trading')
+db_user = os.getenv('DB_USER', 'postgres')
+db_password = os.getenv('DB_PASSWORD', 'password')
+db_port = os.getenv('DB_PORT', '5432')
+
+DB_URL = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
 feature_engineer = FeatureEngineer(DB_URL)
 
 # Feature columns definition

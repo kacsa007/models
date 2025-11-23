@@ -25,6 +25,9 @@ services:
     environment:
       - DB_HOST=timescaledb
       - DB_NAME=okx_trading
+      - DB_USER=postgres
+      - DB_PASSWORD=your_password
+      - DB_PORT=5432
       - OKX_API_KEY=${OKX_API_KEY}
       - OKX_SECRET_KEY=${OKX_SECRET_KEY}
       - OKX_PASSPHRASE=${OKX_PASSPHRASE}
@@ -37,6 +40,12 @@ services:
     depends_on:
       - timescaledb
       - redis
+    environment:
+      - DB_HOST=timescaledb
+      - DB_NAME=okx_trading
+      - DB_USER=postgres
+      - DB_PASSWORD=your_password
+      - DB_PORT=5432
 
 volumes:
   timescale_data:
