@@ -25,9 +25,16 @@ FEATURE_COLUMNS = [
     'returns', 'log_returns', 'volatility', 'momentum_5', 'momentum_10'
 ]
 
-# Load models on startup
-classification_model = joblib.load('models/direction_model.pkl')
-regression_model = joblib.load('models/return_model.pkl')
+# Model instances (lazy loaded)
+classification_model = None
+regression_model = None
+
+def load_models():
+    """Lazy load ML models on first use."""
+    global classification_model, regression_model
+    if classification_model is None or regression_model is None:
+        classification_model = joblib.load('models/direction_model.pkl')
+        regression_model = joblib.load('models/return_model.pkl')
 
 class PredictionRequest(BaseModel):
     instrument: str
@@ -44,6 +51,7 @@ class PredictionResponse(BaseModel):
 async def predict_price(request: PredictionRequest):
     """Generate real-time prediction for instrument"""
     try:
+        load_models()  # Ensure models are loaded
         df = feature_engineer.load_ohlcv(
             request.instrument,
             'NOW() - INTERVAL \'1 day\'',
@@ -68,6 +76,17 @@ async def predict_price(request: PredictionRequest):
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+@app.on_event("startup")
+async def startup_event():
+    """Preload models on API startup (production mode)."""
+    try:
+        load_models()
+        print("✓ Models loaded successfully")
+    except FileNotFoundError:
+        print("⚠ Warning: Model files not found. Models will be loaded on first prediction.")
+    except Exception as e:
+        print(f"⚠ Warning: Could not preload models: {e}")
 
 if __name__ == "__main__":
     import uvicorn

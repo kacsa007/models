@@ -7,6 +7,31 @@ import numpy as np
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine
 from unittest.mock import Mock, patch, AsyncMock
+import os
+import joblib
+from sklearn.ensemble import RandomForestClassifier
+
+@pytest.fixture(scope='session', autouse=True)
+def setup_test_models():
+    """Create dummy models before any tests run."""
+    os.makedirs('models', exist_ok=True)
+
+    # Only create if they don't exist
+    if not os.path.exists('models/direction_model.pkl') or not os.path.exists('models/return_model.pkl'):
+        print("\n⚙ Creating dummy ML models for testing...")
+
+        # Create minimal dummy models
+        clf_model = RandomForestClassifier(n_estimators=5, max_depth=3, random_state=42)
+        X_train = np.random.rand(50, 22)  # 22 features
+        y_train = np.random.randint(0, 2, 50)
+        clf_model.fit(X_train, y_train)
+
+        reg_model = RandomForestClassifier(n_estimators=5, max_depth=3, random_state=42)
+        reg_model.fit(X_train, y_train)
+
+        joblib.dump(clf_model, 'models/direction_model.pkl')
+        joblib.dump(reg_model, 'models/return_model.pkl')
+        print("✓ Test models created successfully\n")
 
 @pytest.fixture
 def sample_ohlcv_data():
