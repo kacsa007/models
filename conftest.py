@@ -1,0 +1,72 @@
+"""
+Pytest configuration and shared fixtures for the OKX trading ML pipeline.
+"""
+import pytest
+import pandas as pd
+import numpy as np
+from datetime import datetime, timedelta
+from sqlalchemy import create_engine
+from unittest.mock import Mock, patch, AsyncMock
+
+@pytest.fixture
+def sample_ohlcv_data():
+    """Generate sample OHLCV data for testing."""
+    dates = pd.date_range(start='2025-01-01', periods=100, freq='1h')
+    data = {
+        'timestamp': dates,
+        'open': np.random.uniform(40000, 50000, 100),
+        'high': np.random.uniform(50000, 55000, 100),
+        'low': np.random.uniform(35000, 40000, 100),
+        'close': np.random.uniform(40000, 50000, 100),
+        'volume': np.random.uniform(100, 1000, 100)
+    }
+    df = pd.DataFrame(data)
+    df.set_index('timestamp', inplace=True)
+    return df
+
+@pytest.fixture
+def sample_trade_data():
+    """Generate sample trade data for testing."""
+    return [
+        {
+            'timestamp': datetime.now(),
+            'instrument_id': 'BTC-USDT',
+            'trade_id': '12345',
+            'side': 'buy',
+            'price': 45000.50,
+            'size': 0.1
+        },
+        {
+            'timestamp': datetime.now(),
+            'instrument_id': 'ETH-USDT',
+            'trade_id': '12346',
+            'side': 'sell',
+            'price': 3000.25,
+            'size': 1.5
+        }
+    ]
+
+@pytest.fixture
+def sample_orderbook_data():
+    """Generate sample orderbook data for testing."""
+    return {
+        'bids': [(45000.00, 0.5, 0, 0), (44999.50, 1.0, 0, 0), (44999.00, 2.0, 0, 0)],
+        'asks': [(45001.00, 0.3, 0, 0), (45001.50, 0.8, 0, 0), (45002.00, 1.5, 0, 0)],
+        'timestamp': int(datetime.now().timestamp() * 1000)
+    }
+
+@pytest.fixture
+def mock_db_engine():
+    """Mock database engine for testing."""
+    return create_engine('sqlite:///:memory:')
+
+@pytest.fixture
+def feature_columns():
+    """Define expected feature columns."""
+    return [
+        'open', 'high', 'low', 'close', 'volume', 
+        'sma_20', 'ema_12', 'ema_26', 'macd', 'macd_signal',
+        'rsi', 'stoch', 'bb_high', 'bb_low', 'atr', 
+        'volume_sma', 'volume_ratio', 'returns', 'log_returns', 
+        'volatility', 'momentum_5', 'momentum_10'
+    ]
