@@ -7,12 +7,19 @@ from typing import Dict, List
 
 app = FastAPI(title="OKX Trading ML API")
 
+DB_URL = "postgresql://postgres:password@localhost:5432/okx_trading"
+feature_engineer = FeatureEngineer(DB_URL)
+
+# Feature columns definition
+FEATURE_COLUMNS = [
+    'open', 'high', 'low', 'close', 'volume', 'sma_20', 'ema_12', 'ema_26', 'macd', 'macd_signal',
+    'rsi', 'stoch', 'bb_high', 'bb_low', 'atr', 'volume_sma', 'volume_ratio',
+    'returns', 'log_returns', 'volatility', 'momentum_5', 'momentum_10'
+]
+
 # Load models on startup
 classification_model = joblib.load('models/direction_model.pkl')
 regression_model = joblib.load('models/return_model.pkl')
-
-DB_URL = "postgresql://postgres:password@localhost:5432/okx_trading"
-feature_engineer = FeatureEngineer(DB_URL)
 
 class PredictionRequest(BaseModel):
     instrument: str
@@ -29,26 +36,17 @@ class PredictionResponse(BaseModel):
 async def predict_price(request: PredictionRequest):
     """Generate real-time prediction for instrument"""
     try:
-        # Get recent data
         df = feature_engineer.load_ohlcv(
             request.instrument,
             'NOW() - INTERVAL \'1 day\'',
             'NOW()'
         )
-        
-        # Generate features
         df = feature_engineer.generate_technical_indicators(df)
-        
-        # Get latest features
-        latest_features = df.iloc[-1:][feature_cols]
-        
-        # Make predictions
+        latest_features = df.iloc[-1:][FEATURE_COLUMNS]
         direction_pred = classification_model.predict(latest_features)[0]
         direction_proba = classification_model.predict_proba(latest_features)[0]
         return_pred = regression_model.predict(latest_features)[0]
-        
         confidence = max(direction_proba)
-        
         return PredictionResponse(
             instrument=request.instrument,
             predicted_direction=int(direction_pred),
@@ -56,7 +54,6 @@ async def predict_price(request: PredictionRequest):
             confidence=float(confidence),
             timestamp=str(df.index[-1])
         )
-    
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
