@@ -24,6 +24,30 @@ class FeatureEngineer:
     
     def generate_technical_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
         """Add technical indicators as features"""
+        # Check if we have enough data for indicators
+        min_periods = 26  # EMA 26 is the longest window we use
+
+        if len(df) < min_periods:
+            # For small datasets, add NaN columns
+            df['sma_20'] = np.nan
+            df['ema_12'] = np.nan
+            df['ema_26'] = np.nan
+            df['macd'] = np.nan
+            df['macd_signal'] = np.nan
+            df['rsi'] = np.nan
+            df['stoch'] = np.nan
+            df['bb_high'] = np.nan
+            df['bb_low'] = np.nan
+            df['atr'] = np.nan
+            df['volume_sma'] = np.nan
+            df['volume_ratio'] = np.nan
+            df['returns'] = df['close'].pct_change()
+            df['log_returns'] = np.log(df['close'] / df['close'].shift(1))
+            df['volatility'] = np.nan
+            df['momentum_5'] = np.nan
+            df['momentum_10'] = np.nan
+            return df
+
         # Trend indicators
         df['sma_20'] = ta.trend.sma_indicator(df['close'], window=20)
         df['ema_12'] = ta.trend.ema_indicator(df['close'], window=12)

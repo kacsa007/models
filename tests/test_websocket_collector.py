@@ -2,8 +2,7 @@
 Tests for OKX WebSocket data collector.
 """
 import pytest
-import asyncio
-from unittest.mock import Mock, patch, AsyncMock
+from unittest.mock import Mock, patch
 from datetime import datetime
 from okx_websocket_collector import OKXWebSocketCollector
 
@@ -64,7 +63,8 @@ async def test_handle_trade_message(ws_collector, sample_trade_data):
     assert ws_collector.buffer[0][1] == 'BTC-USDT'
 
 @pytest.mark.asyncio
-async def test_buffer_flush(ws_collector):
+@patch('okx_websocket_collector.execute_batch')
+async def test_buffer_flush(mock_execute_batch, ws_collector):
     """Test that buffer flushes correctly when reaching threshold."""
     ws_collector.conn = Mock()
     ws_collector.buffer = [(datetime.now(), 'BTC-USDT', '123', 'buy', 45000, 0.1)] * 100
@@ -74,11 +74,15 @@ async def test_buffer_flush(ws_collector):
     mock_cursor = Mock()
     ws_collector.conn.cursor.return_value = mock_cursor
     
+    # Mock execute_batch to not raise exceptions
+    mock_execute_batch.return_value = None
+
     await ws_collector.flush_buffer()
     
     # Buffer should be empty after flush
     assert len(ws_collector.buffer) == 0
     assert ws_collector.conn.commit.called
+    assert mock_execute_batch.called
 
 def test_websocket_url_configuration(ws_collector):
     """Test WebSocket URLs are properly configured."""
