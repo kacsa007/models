@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  timescaledb:
+    image: timescale/timescaledb:latest-pg14
+    environment:
+      POSTGRES_DB: okx_trading
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: your_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - timescale_data:/var/lib/postgresql/data
+    
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+  
+  collector:
+    build: .
+    command: python okx_websocket_collector.py
+    depends_on:
+      - timescaledb
+    environment:
+      - DB_HOST=timescaledb
+      - DB_NAME=okx_trading
+      - OKX_API_KEY=${OKX_API_KEY}
+      - OKX_SECRET_KEY=${OKX_SECRET_KEY}
+      - OKX_PASSPHRASE=${OKX_PASSPHRASE}
+  
+  api:
+    build: .
+    command: python inference_api.py
+    ports:
+      - "8000:8000"
+    depends_on:
+      - timescaledb
+      - redis
+
+volumes:
+  timescale_data:
